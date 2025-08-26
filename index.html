@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Гостевая книга с Firebase</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        :root {
+            --dark-bg: #121212;
+            --darker-bg: #0a0a0a;
+            --card-bg: #1e1e1e;
+            --card-border: #333;
+            --text-primary: #e0e0e0;
+            --text-secondary: #a0a0a0;
+            --accent-color: #6a11cb;
+            --accent-secondary: #2575fc;
+            --success: #4CAF50;
+            --error: #f44336;
+            --warning: #ff9800;
+        }
+        
+        body {
+            background: var(--dark-bg);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 20px;
+        }
+        
+        @media (max-width: 900px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        header {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 20px;
+            background: var(--card-bg);
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--card-border);
+        }
+        
+        h1 {
+            color: var(--accent-secondary);
+            margin-bottom: 10px;
+        }
+        
+        .profile {
+            background: var(--card-bg);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
+            text-align: center;
+            border: 1px solid var(--card-border);
+            position: relative;
+        }
+        
+        .avatar {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 5px solid var(--accent-color);
+            margin: 0 auto 15px;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+        
+        .avatar:hover {
+            transform: scale(1.03);
+        }
+        
+        .username {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--accent-secondary);
+            margin-bottom: 10px;
+        }
+        
+        .user-description {
+            color: var(--text-secondary);
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+        
+        .social-links {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .social-links a {
+            color: var(--accent-color);
+            font-size: 24px;
+            transition: transform 0.3s, color 0.3s;
+        }
+        
+        .social-links a:hover {
+            transform: scale(1.2);
+            color: var(--accent-secondary);
+        }
+        
+        .guestbook {
+            background: var(--card-bg);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--card-border);
+        }
+        
+        .add-review {
+            background: var(--darker-bg);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 1px solid var(--card-border);
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: var(--accent-secondary);
+        }
+        
+        input, textarea, select {
+            width: 100%;
+            padding: 12px;
+            background: var(--card-bg);
+            color: var(--text-primary);
+            border: 2px solid var(--card-border);
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        
+        button {
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+        
+        button:hover {
+            background: var(--accent-secondary);
+        }
+        
+        button:disabled {
+            background: #555;
+            cursor: not-allowed;
+        }
+        
+        .btn-danger {
+            background: var(--error);
+        }
+        
+        .btn-danger:hover {
+            background: #d32f2f;
+        }
+        
+        .btn-warning {
+            background: var(--warning);
+            color: #000;
+        }
+        
+        .btn-warning:hover {
+            background: #f57c00;
+        }
+        
+        .reviews-list {
+            margin-top: 20px;
+        }
+        
+        .review {
+            background: var(--darker-bg);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            position: relative;
+            border: 1px solid var(--card-border);
+        }
+        
+        .review-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        
+        .reviewer-name {
+            font-weight: bold;
+            color: var(--accent-secondary);
+        }
+        
+        .review-date {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+        
+        .review-text {
+            line-height: 1.5;
+            color: var(--text-primary);
+        }
+        
+        .review-rating {
+            margin-top: 10px;
+            color: var(--warning);
+        }
+        
+        .admin-panel {
+            background: var(--darker-bg);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            border: 1px solid var(--card-border);
+        }
+        
+        .filters {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+        
+        .filter-btn {
+            background: #444;
+            padding: 8px 15px;
+        }
+        
+        .filter-btn.active {
+            background: var(--accent-color);
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+            text-align: center;
+        }
+        
+        .stat {
+            background: var(--accent-color);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            min-width: 100px;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--success);
+            color: white;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
+            display: none;
+            z-index: 1000;
+            max-width: 300px;
+        }
+        
+        .notification.error {
+            background: var(--error);
+        }
+        
+        .notification.warning {
+            background: var(--warning);
+            color: #000;
+        }
+        
+        .loader {
+            border: 5px solid #333;
+            border-top: 5px solid var(--accent-color);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Модальные окна */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            display: none;
+        }
+        
+        .modal {
+            background: var(--card-bg);
+            border-radius: 10px;
+            padding: 25px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 5px 30px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--card-border);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal-title {
+            font-size: 1.5rem;
+            color: var(--accent-secondary);
+        }
+        
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+        }
+        
+        .admin-actions {
+            margin-top: 20px;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+        }
+        
+        .review-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .review-actions button {
+            padding: 6px 12px;
+            font-size: 14px;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .admin-badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: var(--accent-color);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Гостевая книга</h1>
+            <p>Оставьте ваш отзыв о пользователе</p>
+        </header>
+        
+        <div class="profile">
+            <div class="admin-badge" id="admin-badge">Админ</div>
+            <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=200&q=80" alt="Аватар" class="avatar" id="user-avatar">
+            <div class="username" id="user-name">Алексей Петров</div>
+            <div class="user-description" id="user-description">Frontend разработчик и UX дизайнер с более чем 5-летним опытом работы. Специализируюсь на создании интуитивно понятных и современных пользовательских интерфейсов.</div>
+            
+            <div class="social-links">
+                <a href="#"><i class="fab fa-vk"></i></a>
+                <a href="#"><i class="fab fa-telegram"></i></a>
+                <a href="#"><i class="fab fa-github"></i></a>
+                <a href="#"><i class="fab fa-linkedin"></i></a>
+            </div>
+            
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-value" id="reviews-count">0</div>
+                    <div class="stat-label">Отзывов</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="average-rating">0.0</div>
+                    <div class="stat-label">Рейтинг</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="guestbook">
+            <div class="add-review">
+                <h2>Оставить отзыв</h2>
+                <div class="form-group">
+                    <label for="reviewer-name">Ваше имя</label>
+                    <input type="text" id="reviewer-name" placeholder="Введите ваше имя">
+                </div>
+                <div class="form-group">
+                    <label for="review-text">Текст отзыва</label>
+                    <textarea id="review-text" placeholder="Напишите ваш отзыв здесь"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="review-rating">Оценка (1-5)</label>
+                    <select id="review-rating">
+                        <option value="5">5 ★</option>
+                        <option value="4">4 ★</option>
+                        <option value="3">3 ★</option>
+                        <option value="2">2 ★</option>
+                        <option value="1">1 ★</option>
+                    </select>
+                </div>
+                <button id="submit-review">Отправить отзыв</button>
+            </div>
+            
+            <div class="admin-panel hidden" id="admin-panel">
+                <h3>Панель администратора</h3>
+                <div class="filters">
+                    <button class="filter-btn active" data-filter="all">Все</button>
+                    <button class="filter-btn" data-filter="positive">Положительные (4-5)</button>
+                    <button class="filter-btn" data-filter="negative">Отрицательные (1-2)</button>
+                    <button class="filter-btn" data-filter="recent">Недавние</button>
+                </div>
+                <div class="admin-actions">
+                    <button id="delete-all-reviews" class="btn-danger">Удалить все отзывы</button>
+                    <button id="change-password-btn">Сменить пароль админки</button>
+                    <button id="edit-profile-btn">Редактировать профиль</button>
+                </div>
+            </div>
+            
+            <div class="reviews-list" id="reviews-container">
+                <div class="loader" id="reviews-loader"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="notification" id="notification"></div>
+
+    <!-- Модальное окно смены пароля -->
+    <div class="modal-overlay" id="password-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Смена пароля админки</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="form-group">
+                <label for="current-password">Текущий пароль</label>
+                <input type="password" id="current-password" placeholder="Введите текущий пароль">
+            </div>
+            <div class="form-group">
+                <label for="new-password">Новый пароль</label>
+                <input type="password" id="new-password" placeholder="Введите новый пароль">
+            </div>
+            <div class="form-group">
+                <label for="confirm-password">Подтвердите новый пароль</label>
+                <input type="password" id="confirm-password" placeholder="Подтвердите новый пароль">
+            </div>
+            <button id="save-password-btn">Сохранить новый пароль</button>
+        </div>
+    </div>
+
+    <!-- Модальное окно редактирования профиля -->
+    <div class="modal-overlay" id="profile-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Редактирование профиля</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="form-group">
+                <label for="edit-name">Имя пользователя</label>
+                <input type="text" id="edit-name" placeholder="Введите имя">
+            </div>
+            <div class="form-group">
+                <label for="edit-description">Описание профиля</label>
+                <textarea id="edit-description" placeholder="Введите описание"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="edit-avatar">Ссылка на аватар</label>
+                <input type="text" id="edit-avatar" placeholder="Введите URL аватара">
+            </div>
+            <button id="save-profile-btn">Сохранить изменения</button>
+        </div>
+    </div>
+
+    <!-- Модальное окно ввода пароля -->
+    <div class="modal-overlay" id="login-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Введите пароль админки</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="form-group">
+                <label for="admin-password">Пароль</label>
+                <input type="password" id="admin-password" placeholder="Введите пароль">
+            </div>
+            <button id="login-admin-btn">Войти</button>
+        </div>
+    </div>
+
+    <!-- Подключаем Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBvZtcXunNclFktlCpgoTHIUDPi1wHcnGg",
+            authDomain: "otzivi-ac292.firebaseapp.com",
+            projectId: "otzivi-ac292",
+            storageBucket: "otzivi-ac292.firebasestorage.app",
+            messagingSenderId: "1011146666432",
+            appId: "1:1011146666432:web:44ace2eb3410d2d99d5825"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Элементы DOM
+            const reviewsContainer = document.getElementById('reviews-container');
+            const submitButton = document.getElementById('submit-review');
+            const reviewerNameInput = document.getElementById('reviewer-name');
+            const reviewTextInput = document.getElementById('review-text');
+            const reviewRatingSelect = document.getElementById('review-rating');
+            const reviewsCount = document.getElementById('reviews-count');
+            const averageRating = document.getElementById('average-rating');
+            const filterButtons = document.querySelectorAll('.filter-btn');
+            const deleteAllButton = document.getElementById('delete-all-reviews');
+            const notification = document.getElementById('notification');
+            const reviewsLoader = document.getElementById('reviews-loader');
+            const adminPanel = document.getElementById('admin-panel');
+            const adminBadge = document.getElementById('admin-badge');
+            const userAvatar = document.getElementById('user-avatar');
+            const userName = document.getElementById('user-name');
+            const userDescription = document.getElementById('user-description');
+            const avatar = document.getElementById('user-avatar');
+            
+            // Модальные окна
+            const passwordModal = document.getElementById('password-modal');
+            const profileModal = document.getElementById('profile-modal');
+            const loginModal = document.getElementById('login-modal');
+            const closeModalButtons = document.querySelectorAll('.close-modal');
+            const changePasswordBtn = document.getElementById('change-password-btn');
+            const editProfileBtn = document.getElementById('edit-profile-btn');
+            const savePasswordBtn = document.getElementById('save-password-btn');
+            const saveProfileBtn = document.getElementById('save-profile-btn');
+            const loginAdminBtn = document.getElementById('login-admin-btn');
+            
+            let allReviews = [];
+            let currentFilter = 'all';
+            let adminPassword = "1234"; // Пароль по умолчанию
+            let avatarClickCount = 0;
+            let isAdmin = false;
+            let clickTimeout;
+
+            // Функция отображения уведомления
+            function showNotification(message, type = "success") {
+                notification.textContent = message;
+                notification.className = `notification ${type}`;
+                notification.style.display = 'block';
+                
+                setTimeout(() => {
+                    notification.style.display = 'none';
+                }, 3000);
+            }
+
+            // Функция показа модального окна
+            function showModal(modal) {
+                modal.style.display = 'flex';
+            }
+
+            // Функция скрытия модального окна
+            function hideModal(modal) {
+                modal.style.display = 'none';
+            }
+
+            // Функция загрузки отзывов из Firebase
+            function loadReviews() {
+                reviewsLoader.style.display = 'block';
+                
+                db.collection("reviews").orderBy("date", "desc")
+                    .get()
+                    .then((querySnapshot) => {
+                        allReviews = [];
+                        querySnapshot.forEach((doc) => {
+                            allReviews.push({
+                                id: doc.id,
+                                ...doc.data()
+                            });
+                        });
+                        
+                        displayReviews(allReviews);
+                        updateStats();
+                        reviewsLoader.style.display = 'none';
+                    })
+                    .catch((error) => {
+                        console.error("Ошибка загрузки отзывов: ", error);
+                        showNotification("Ошибка загрузки отзывов", "error");
+                        reviewsLoader.style.display = 'none';
+                    });
+            }
+
+            // Функция отображения отзывов
+            function displayReviews(reviewsArray) {
+                reviewsContainer.innerHTML = '';
+                
+                if (reviewsArray.length === 0) {
+                    reviewsContainer.innerHTML = '<p class="no-reviews">Пока нет отзывов. Будьте первым!</p>';
+                    return;
+                }
+                
+                reviewsArray.forEach(review => {
+                    const reviewElement = document.createElement('div');
+                    reviewElement.className = 'review';
+                    
+                    // Определяем класс в зависимости от рейтинга
+                    if (review.rating >= 4) {
+                        reviewElement.classList.add('positive');
+                    } else if (review.rating <= 2) {
+                        reviewElement.classList.add('negative');
+                    }
+                    
+                    // Форматируем дату
+                    const reviewDate = review.date.toDate ? review.date.toDate() : new Date(review.date);
+                    const formattedDate = reviewDate.toLocaleDateString('ru-RU');
+                    
+                    reviewElement.innerHTML = `
+                        <div class="review-header">
+                            <span class="reviewer-name">${review.name}</span>
+                            <span class="review-date">${formattedDate}</span>
+                        </div>
+                        <div class="review-text">${review.text}</div>
+                        <div class="review-rating">Оценка: ${'★'.repeat(review.rating)}${'☆'.repeat(5 - review.rating)}</div>
+                    `;
+                    
+                    // Добавляем кнопки администрирования, если пользователь вошел как администратор
+                    if (isAdmin) {
+                        const reviewActions = document.createElement('div');
+                        reviewActions.className = 'review-actions';
+                        reviewActions.innerHTML = `
+                            <button class="btn-danger delete-review" data-id="${review.id}">Удалить</button>
+                            <button class="btn-warning edit-review" data-id="${review.id}">Редактировать</button>
+                        `;
+                        reviewElement.appendChild(reviewActions);
+                    }
+                    
+                    reviewsContainer.appendChild(reviewElement);
+                });
+                
+                // Добавляем обработчики событий для кнопок администрирования
+                if (isAdmin) {
+                    document.querySelectorAll('.delete-review').forEach(button => {
+                        button.addEventListener('click', function() {
+                            const reviewId = this.getAttribute('data-id');
+                            deleteReview(reviewId);
+                        });
+                    });
+                    
+                    document.querySelectorAll('.edit-review').forEach(button => {
+                        button.addEventListener('click', function() {
+                            const reviewId = this.getAttribute('data-id');
+                            editReview(reviewId);
+                        });
+                    });
+                }
+            }
+
+            // Функция обновления статистики
+            function updateStats() {
+                reviewsCount.textContent = allReviews.length;
+                
+                if (allReviews.length > 0) {
+                    const totalRating = allReviews.reduce((sum, review) => sum + review.rating, 0);
+                    const avgRating = (totalRating / allReviews.length).toFixed(1);
+                    averageRating.textContent = avgRating;
+                } else {
+                    averageRating.textContent = '0.0';
+                }
+            }
+
+            // Функция добавления нового отзыва
+            function addReview() {
+                const name = reviewerNameInput.value.trim();
+                const text = reviewTextInput.value.trim();
+                const rating = parseInt(reviewRatingSelect.value);
+                
+                if (!name || !text) {
+                    showNotification('Пожалуйста, заполните все поля', "error");
+                    return;
+                }
+                
+                // Проверяем, не оставлял ли уже пользователь отзыв
+                const existingReview = allReviews.find(review => review.name.toLowerCase() === name.toLowerCase());
+                if (existingReview) {
+                    showNotification('Вы уже оставляли отзыв. Каждый пользователь может оставить только один отзыв.', "error");
+                    return;
+                }
+                
+                // Блокируем кнопку отправки
+                submitButton.disabled = true;
+                submitButton.textContent = 'Отправка...';
+                
+                // Создаем новый отзыв
+                const newReview = {
+                    name: name,
+                    text: text,
+                    rating: rating,
+                    date: new Date()
+                };
+                
+                // Добавляем отзыв в Firebase
+                db.collection("reviews").add(newReview)
+                    .then(() => {
+                        // Очищаем поля ввода
+                        reviewerNameInput.value = '';
+                        reviewTextInput.value = '';
+                        reviewRatingSelect.value = '5';
+                        
+                        // Показываем уведомление
+                        showNotification('Ваш отзыв успешно добавлен!');
+                        
+                        // Перезагружаем отзывы
+                        loadReviews();
+                    })
+                    .catch((error) => {
+                        console.error("Ошибка добавления отзыва: ", error);
+                        showNotification("Ошибка добавления отзыва", "error");
+                    })
+                    .finally(() => {
+                        // Разблокируем кнопку отправки
+                        submitButton.disabled = false;
+                        submitButton.textContent = 'Отправить отзыв';
+                    });
+            }
+
+            // Функция удаления отзыва
+            function deleteReview(reviewId) {
+                if (!confirm("Вы уверены, что хотите удалить этот отзыв?")) {
+                    return;
+                }
+                
+                db.collection("reviews").doc(reviewId).delete()
+                    .then(() => {
+                        showNotification("Отзыв успешно удален");
+                        loadReviews();
+                    })
+                    .catch((error) => {
+                        console.error("Ошибка удаления отзыва: ", error);
+                        showNotification("Ошибка удаления отзыва", "error");
+                    });
+            }
+
+            // Функция редактирования отзыва
+            function editReview(reviewId) {
+                const review = allReviews.find(r => r.id === reviewId);
+                if (!review) return;
+                
+                const newText = prompt("Редактирование отзыва:", review.text);
+                if (newText === null) return;
+                
+                db.collection("reviews").doc(reviewId).update({
+                    text: newText
+                })
+                .then(() => {
+                    showNotification("Отзыв успешно отредактирован");
+                    loadReviews();
+                })
+                .catch((error) => {
+                    console.error("Ошибка редактирования отзыва: ", error);
+                    showNotification("Ошибка редактирования отзыва", "error");
+                });
+            }
+
+            // Функция фильтрации отзывов
+            function filterReviews(filter) {
+                currentFilter = filter;
+                let filteredReviews = [];
+                
+                switch(filter) {
+                    case 'all':
+                        filteredReviews = allReviews;
+                        break;
+                    case 'positive':
+                        filteredReviews = allReviews.filter(review => review.rating >= 4);
+                        break;
+                    case 'negative':
+                        filteredReviews = allReviews.filter(review => review.rating <= 2);
+                        break;
+                    case 'recent':
+                        filteredReviews = [...allReviews].sort((a, b) => {
+                            const dateA = a.date.toDate ? a.date.toDate() : new Date(a.date);
+                            const dateB = b.date.toDate ? b.date.toDate() : new Date(b.date);
+                            return dateB - dateA;
+                        });
+                        break;
+                    default:
+                        filteredReviews = allReviews;
+                }
+                
+                displayReviews(filteredReviews);
+            }
+
+            // Функция удаления всех отзывов
+            function deleteAllReviews() {
+                if (!confirm("Вы уверены, что хотите удалить все отзывы? Это действие нельзя отменить.")) {
+                    return;
+                }
+                
+                const batch = db.batch();
+                const reviewsRef = db.collection("reviews");
+                
+                reviewsRef.get().then((querySnapshot) => {
+                    querySnapshot.forEach((doc) => {
+                        batch.delete(doc.ref);
+                    });
+                    return batch.commit();
+                }).then(() => {
+                    showNotification("Все отзывы удалены");
+                    loadReviews();
+                }).catch((error) => {
+                    console.error("Ошибка удаления отзывов: ", error);
+                    showNotification("Ошибка удаления отзывов", "error");
+                });
+            }
+
+            // Функция смены пароля
+            function changePassword() {
+                const currentPassword = document.getElementById('current-password').value;
+                const newPassword = document.getElementById('new-password').value;
+                const confirmPassword = document.getElementById('confirm-password').value;
+                
+                if (currentPassword !== adminPassword) {
+                    showNotification("Текущий пароль неверен", "error");
+                    return;
+                }
+                
+                if (newPassword !== confirmPassword) {
+                    showNotification("Новые пароли не совпадают", "error");
+                    return;
+                }
+                
+                if (newPassword.length < 4) {
+                    showNotification("Пароль должен содержать не менее 4 символов", "error");
+                    return;
+                }
+                
+                adminPassword = newPassword;
+                hideModal(passwordModal);
+                showNotification("Пароль успешно изменен");
+                
+                // Очищаем поля
+                document.getElementById('current-password').value = '';
+                document.getElementById('new-password').value = '';
+                document.getElementById('confirm-password').value = '';
+            }
+
+            // Функция редактирования профиля
+            function editProfile() {
+                const newName = document.getElementById('edit-name').value;
+                const newDescription = document.getElementById('edit-description').value;
+                const newAvatar = document.getElementById('edit-avatar').value;
+                
+                if (newName) {
+                    userName.textContent = newName;
+                }
+                
+                if (newDescription) {
+                    userDescription.textContent = newDescription;
+                }
+                
+                if (newAvatar) {
+                    userAvatar.src = newAvatar;
+                }
+                
+                hideModal(profileModal);
+                showNotification("Профиль успешно обновлен");
+                
+                // Очищаем поля
+                document.getElementById('edit-name').value = '';
+                document.getElementById('edit-description').value = '';
+                document.getElementById('edit-avatar').value = '';
+            }
+
+            // Функция входа в админку
+            function loginAdmin() {
+                const password = document.getElementById('admin-password').value;
+                
+                if (password === adminPassword) {
+                    isAdmin = true;
+                    adminPanel.classList.remove('hidden');
+                    adminBadge.style.display = 'block';
+                    hideModal(loginModal);
+                    showNotification("Вы успешно вошли в панель администратора");
+                    loadReviews(); // Перезагружаем отзывы с кнопками администрирования
+                } else {
+                    showNotification("Неверный пароль", "error");
+                }
+                
+                document.getElementById('admin-password').value = '';
+            }
+
+            // Обработчик кликов по аватарке
+            avatar.addEventListener('click', function() {
+                avatarClickCount++;
+                
+                // Сбрасываем счетчик через 3 секунды
+                clearTimeout(clickTimeout);
+                clickTimeout = setTimeout(() => {
+                    avatarClickCount = 0;
+                }, 3000);
+                
+                // Если кликнули 5 раз, показываем окно входа
+                if (avatarClickCount >= 5) {
+                    avatarClickCount = 0;
+                    showModal(loginModal);
+                }
+            });
+
+            // Инициализация
+            loadReviews();
+
+            // Обработчики событий
+            submitButton.addEventListener('click', addReview);
+            
+            filterButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    // Убираем активный класс у всех кнопок
+                    filterButtons.forEach(btn => btn.classList.remove('active'));
+                    
+                    // Добавляем активный класс текущей кнопке
+                    this.classList.add('active');
+                    
+                    // Фильтруем отзывы
+                    const filter = this.getAttribute('data-filter');
+                    filterReviews(filter);
+                });
+            });
+            
+            deleteAllButton.addEventListener('click', deleteAllReviews);
+            changePasswordBtn.addEventListener('click', () => showModal(passwordModal));
+            editProfileBtn.addEventListener('click', () => showModal(profileModal));
+            savePasswordBtn.addEventListener('click', changePassword);
+            saveProfileBtn.addEventListener('click', editProfile);
+            loginAdminBtn.addEventListener('click', loginAdmin);
+            
+            // Закрытие модальных окон
+            closeModalButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const modal = this.closest('.modal-overlay');
+                    hideModal(modal);
+                });
+            });
+            
+            // Закрытие модальных окон при клике вне их
+            document.querySelectorAll('.modal-overlay').forEach(modal => {
+                modal.addEventListener('click', function(e) {
+                    if (e.target === this) {
+                        hideModal(this);
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
